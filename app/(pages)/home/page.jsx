@@ -8,6 +8,7 @@ import imgExample from "@/public/images/example.png";
 import imgExample2 from "@/public/images/example2.png";
 import imgExample3 from "@/public/images/example3.png";
 import imgExample4 from "@/public/images/example4.png";
+import gsap from "gsap";
 
 export const Index = () => {
   const [words, setWords] = useState([]);
@@ -132,39 +133,12 @@ export const Index = () => {
     }
   };
 
-  useEffect(() => {
-    if (showCanvas && canvasRef.current) {
-      const numWords = words.length;
-      let weightFactor;
-
-      if (numWords <= 100) {
-        weightFactor = 20;
-      } else if (numWords <= 200) {
-        weightFactor = 17;
-      } else if (numWords <= 300) {
-        weightFactor = 13;
-      } else if (numWords <= 400) {
-        weightFactor = 7;
-      } else {
-        weightFactor = 3;
-      }
-
-      WordCloud(canvasRef.current, {
-        list: words,
-        weightFactor: weightFactor,
-        color: "random-light",
-        backgroundColor: "transparent",
-      });
-    }
-  }, [showCanvas, words]);
-
   const handleFileUpload = (file) => {
     if (file) {
       Papa.parse(file, {
         complete: (result) => {
           const data = result.data;
           const sortedWordCount = sortWordCounts(countWords(data));
-          console.table(sortedWordCount);
 
           const wordArray = sortedWordCount.map(([word, count]) => [
             word,
@@ -243,6 +217,155 @@ export const Index = () => {
     }
   };
 
+  const svgRef = useRef(null);
+
+  useEffect(() => {
+    if (showCanvas && canvasRef.current) {
+      const numWords = words.length;
+      let weightFactor;
+
+      if (numWords <= 100) {
+        weightFactor = 20;
+      } else if (numWords <= 200) {
+        weightFactor = 17;
+      } else if (numWords <= 300) {
+        weightFactor = 13;
+      } else if (numWords <= 400) {
+        weightFactor = 7;
+      } else {
+        weightFactor = 3;
+      }
+
+      WordCloud(canvasRef.current, {
+        list: words,
+        weightFactor: weightFactor,
+        color: "random-light",
+        backgroundColor: "transparent",
+      });
+    }
+
+    // Gsap animation
+    /* Text reveal */
+    gsap.fromTo(
+      ".text-reveal",
+      {
+        y: 100,
+      },
+      {
+        y: 0,
+        duration: 1,
+        ease: "power2.out",
+      }
+    );
+
+    /* star and moon*/
+    const moon = gsap.fromTo(
+      ".moon",
+      {
+        y: -1000,
+      },
+      {
+        y: 0,
+        duration: 1.5,
+        ease: "bounce.out",
+      }
+    );
+
+    const stars = gsap.fromTo(
+      ".star",
+      {
+        y: -1000,
+      },
+      {
+        y: 0,
+        duration: 2.5,
+        stagger: 0.7,
+        ease: "bounce.out",
+      }
+    );
+
+    gsap
+      .timeline({
+        duration: 0,
+      })
+      .add(moon, 0.1)
+      .add(stars, 0.1)
+      .fromTo(
+        ".star",
+        {
+          rotate: -45,
+        },
+        {
+          transformOrigin: "50% 50%",
+          repeat: -1,
+          rotate: 45,
+          yoyo: true,
+          duration: 1,
+          stagger: 0.3,
+        }
+      );
+
+    /* Component rotate */
+    gsap.to(".sun", {
+      duration: 10,
+      rotation: 360,
+      transformOrigin: "50% 50%",
+      repeat: -1,
+      ease: "none",
+    });
+
+    /* Animated stroke */
+    const path = svgRef.current.querySelector("path");
+    const length = path.getTotalLength();
+
+    gsap.set(path, {
+      strokeDasharray: length,
+      strokeDashoffset: length,
+    });
+
+    gsap.to(path, {
+      strokeDashoffset: 0,
+      duration: 3,
+      ease: "power2.inOut",
+      repeat: -1,
+      yoyo: true,
+    });
+
+    /* marquee verti */
+    const marqVerti = gsap.timeline({
+      repeat: -1,
+      defaults: { duration: 1, delay: 1, ease: "expo.inOut" },
+    });
+
+    marqVerti.to(".marquee-vertical", { yPercent: -100 });
+    marqVerti.to(".marquee-vertical", { yPercent: -200 });
+    marqVerti.to(".marquee-vertical", { yPercent: -300 });
+    marqVerti.to(".marquee-vertical", { yPercent: 0 });
+
+    /* arrow */
+    gsap.fromTo(
+      ".arrow",
+      {
+        x: -10,
+      },
+      {
+        yoyo: true,
+        repeat: -1,
+        duration: 1,
+        x: 10,
+      }
+    );
+
+    /* Adjust */
+    gsap.fromTo(
+      ".adjust",
+      {
+        y: 500,
+      },
+      { y: 0, duration: 1, ease: "power2.out" }
+    );
+  }, [showCanvas, words]);
+
   return (
     <>
       <ReactJoyride
@@ -253,14 +376,15 @@ export const Index = () => {
         showSkipButton
         showProgress
       />
-      <section className=" relative flex flex-col min-h-dvh bg-[#021526] pt-24 px-10 justify-center items-center">
+      <section className=" relative flex flex-col min-h-dvh bg-[#021526] px-10 justify-center items-center overflow-hidden ">
+        {/* button guide */}
         <div
           onClick={() => setShowGuide(true)}
-          className="absolute right-10 top-10 rounded-xl flex px-4 py-2 gap-4 bg-yellow-200 hover:bg-yellow-400 transition-all duration-300 cursor-pointer"
+          className="absolute z-10 right-4 top-4 xl:right-10 xl:top-10 rounded-xl flex justify-center items-center px-4 py-2 gap-2 md:gap-2 bg-white hover:bg-yellow-200 transition-all duration-300 cursor-pointer" 
         >
-          <h1 className="text-xl text-black">Guide</h1>
+          <h1 className=" font-bold text-base xl:text-xl text-black">Guide</h1>
           <svg
-            className="w-6 h-6 text-black"
+            className="w-5 md:w-6 h-5 md:h-6 text-black"
             aria-hidden="true"
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -277,10 +401,11 @@ export const Index = () => {
             />
           </svg>
         </div>
-        <div className="flex flex-col gap-6 justify-center items-center text-center">
+        {/* button guide end*/}
+        <div className="flex flex-col w-full gap-2 md:gap-6 justify-center items-center text-center z-10">
           {showCanvas && (
-            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 z-50 px-10">
-              <div className="bg-[#021526] object-contain relative p-6 min-w-1/2 min-h-1/2 rounded-lg text-center flex flex-col  gap-2">
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 z-50">
+              <div className="bg-[#021526] object-contain relative p-6 max-w-[95%] min-h-[50%] lg:h-[90%] lg:max-w-[70%] xl:max-w-[65%] rounded-lg text-center flex flex-col gap-2">
                 <div
                   onClick={() => setShowCanvas(false)}
                   className="flex items-center gap-2 cursor-pointer group justify-end"
@@ -306,17 +431,17 @@ export const Index = () => {
                     />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-semibold  text-white">Result</h2>
+                <h2 className="text-xl md:text-2xl font-semibold  text-white">Result</h2>
                 <canvas
                   ref={canvasRef}
                   width={800}
                   height={500}
-                  className=" object-contain min-w-full min-h-full p-4 border rounded-xl scale-100"
+                  className="object-scale-down lg:object-contain  lg:w-full lg:h-full xl:min-h-[60%]  scale-100 border rounded-xl"
                 ></canvas>
                 <div className="grid grid-cols-3 items-center justify-between text-start gap-2">
                   {words.slice(0, 9).map(([word, count], index) => (
                     <>
-                      <h1 key={index} className="text-xl text-white font-bold">
+                      <h1 key={index} className="text-md md:text-xl text-white font-bold">
                         {word}: {count}
                       </h1>
                     </>
@@ -332,12 +457,65 @@ export const Index = () => {
               </div>
             </div>
           )}
-          <h1 className="text-[7vw] leading-[100%] font-bold text-white text-balance">
-            Visualization of the words mentioned.
-          </h1>
+
+          <div className="overflow-hidden flex flex-col md:flex-row gap-2 md:gap-8 justify-center items-center ">
+            <h1 className="text-reveal text-[16vw] md:text-[10vw] lg:text-[7vw] leading-[100%] font-Calistoga-Regular text-white text-balance ">
+              Visualize
+            </h1>
+
+            <div className="relative text-reveal bg-yellow-200 rounded-full w-[240px] h-[63px] md:w-96 md:h-[100px] px-4 overflow-hidden flex flex-col ">
+              <h1 className="marquee-vertical text-[44px] sm:text-[44px] md:text-[8vw] lg:text-[6vw] xl:text-[72px] font-Margarine-Regular">
+                #^&@
+              </h1>
+              <h1 className="marquee-vertical text-[44px] sm:text-[44px] md:text-[8vw] lg:text-[6vw] xl:text-[72px] font-Margarine-Regular">
+                🔥🔥🔥
+              </h1>
+              <h1 className="marquee-vertical text-[44px] sm:text-[44px] md:text-[8vw] lg:text-[6vw] xl:text-[72px] font-Margarine-Regular">
+                ~@$-
+              </h1>
+              <h1 className="marquee-vertical text-[44px] sm:text-[44px] md:text-[8vw] lg:text-[6vw] xl:text-[72px] font-Margarine-Regular">
+                Damn !
+              </h1>
+            </div>
+          </div>
+
+          <div className="overflow-hidden flex gap-2 md:gap-8 p-2 justify-center items-center">
+            <h1 className="text-reveal font-Calistoga-Regular  text-[12vw] md:text-[10vw] lg:text-[7vw] leading-[100%] text-white text-balance ">
+              your
+            </h1>
+            <div className=" bg-green-300 rounded-full h-12 w-12 md:w-24 md:h-24 lg:w-[100px] lg:h-[100px] xl:w-32 xl:h-32 overflow-hidden flex justify-center items-center">
+              <span>
+                <svg
+                  data-name="Layer 2"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 16 10"
+                  width="16"
+                  height="10"
+                  className="w-8 md:w-16 h-auto arrow"
+                >
+                  <g data-name="Layer 1">
+                    <path
+                      d="m16,6H0v-2h11.53c-.95-1.06-1.53-2.46-1.53-4h2c0,2.21,1.79,4,4,4v2Z"
+                      fill="#030326"
+                      strokeWidth="0"
+                    ></path>
+                    <path
+                      d="m12,10h-2c0-1.31.41-2.56,1.2-3.6l1.6,1.2c-.52.7-.8,1.52-.8,2.4Z"
+                      fill="#030326"
+                      strokeWidth="0"
+                    ></path>
+                  </g>
+                </svg>
+              </span>
+            </div>
+            <h1 className="text-reveal font-Calistoga-Regular text-[12vw] md:text-[10vw] lg:text-[7vw] leading-[100%] text-white text-balance ">
+              words.
+            </h1>
+          </div>
+          
           <form
             onSubmit={handleFormSubmit}
-            className="flex flex-col gap-4 items-center justify-center w-1/2"
+            className="flex flex-col gap-4 items-center justify-center w-full md:w-[75%] lg:w-1/2"
             onDragOver={handleDragOver}
             onDrop={handleDrop}
           >
@@ -366,7 +544,7 @@ export const Index = () => {
                   </svg>
 
                   <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-                    <span className="font-semibold text-xl">{fileName}</span>{" "}
+                    <span className="font-semibold">{fileName}</span>{" "}
                     <br />
                     Or drag and drop another file
                   </p>
@@ -410,7 +588,7 @@ export const Index = () => {
             <button
               disabled={!fileName}
               type="submit"
-              className={`process-button text-black text-xl border-transparent px-4 py-2 rounded-lg bg-green-300 ${
+              className={`process-button font-Calistoga-Regular text-black text-xl border-transparent px-4 py-2 rounded-lg bg-green-300 ${
                 !fileName
                   ? "hover:bg-green-300 cursor-not-allowed"
                   : "hover:bg-green-500 cursor-pointer"
@@ -434,11 +612,109 @@ export const Index = () => {
                   />
                 </svg>
               ) : (
-                <span>Visualize</span>
+                <span>Process</span>
               )}
             </button>
           </form>
         </div>
+
+        {/* wwww */}
+        <svg
+          ref={svgRef}
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 951 367"
+          fill="none"
+          className="svg-w w-[250px] h-[250px] md:w-[380px] md:h-[380px] lg:w-[500px] lg:h-[500px]  absolute -top-12 -left-12 md:-top-24 md:-left-24 rotate-[-225deg] z-0 "
+        >
+          <path
+            d="M926 366V41.4C926 32.7 919 25.6 910.2 25.6C904.6 25.6 899.7 28.4 897 32.9L730.2 333.3C727.5 338 722.3 341.2 716.5 341.2C707.8 341.2 700.7 334.2 700.7 325.4V41.6C700.7 32.9 693.7 25.8 684.9 25.8C679.3 25.8 674.4 28.6 671.7 33.1L504.7 333.3C502 338 496.8 341.2 491 341.2C482.3 341.2 475.2 334.2 475.2 325.4V41.6C475.2 32.9 468.2 25.8 459.4 25.8C453.8 25.8 448.9 28.6 446.2 33.1L280.2 333.3C277.5 338 272.3 341.2 266.5 341.2C257.8 341.2 250.7 334.2 250.7 325.4V41.6C250.7 32.9 243.7 25.8 234.9 25.8C229.3 25.8 224.4 28.6 221.7 33.1L54.7 333.3C52 338 46.8 341.2 41 341.2C32.3 341.2 25.2 334.2 25.2 325.4V1"
+            stroke="#D61C4E"
+            strokeWidth="50"
+            strokeMiterlimit="10"
+            strokeLinejoin="round"
+          ></path>
+        </svg>
+
+        {/* Sun */}
+        <svg
+          className="sun w-[440px] h-[440px] lg:w-[700px] lg:h-[700px] text-[#FFAF61] absolute top-[-210px] right-[-170px] lg:-top-[300px] lg:-right-[260px] z-[0]"
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          fill="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            fillRule="evenodd"
+            d="M13 3a1 1 0 1 0-2 0v2a1 1 0 1 0 2 0V3ZM6.343 4.929A1 1 0 0 0 4.93 6.343l1.414 1.414a1 1 0 0 0 1.414-1.414L6.343 4.929Zm12.728 1.414a1 1 0 0 0-1.414-1.414l-1.414 1.414a1 1 0 0 0 1.414 1.414l1.414-1.414ZM12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Zm-9 4a1 1 0 1 0 0 2h2a1 1 0 1 0 0-2H3Zm16 0a1 1 0 1 0 0 2h2a1 1 0 1 0 0-2h-2ZM7.757 17.657a1 1 0 1 0-1.414-1.414l-1.414 1.414a1 1 0 1 0 1.414 1.414l1.414-1.414Zm9.9-1.414a1 1 0 0 0-1.414 1.414l1.414 1.414a1 1 0 0 0 1.414-1.414l-1.414-1.414ZM13 19a1 1 0 1 0-2 0v2a1 1 0 1 0 2 0v-2Z"
+            clipRule="evenodd"
+          />
+        </svg>
+
+        {/* Moon */}
+        <svg
+          className="moon hidden lg:flex md:absolute bottom-[-30px] left-[-30px] w-[400px] h-[400px] text-gray-200 z-0"
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M12 21a9 9 0 0 1-.5-17.986V3c-.354.966-.5 1.911-.5 3a9 9 0 0 0 9 9c.239 0 .254.018.488 0A9.004 9.004 0 0 1 12 21Z"
+          />
+        </svg>
+
+        {/* star */}
+        <svg
+          className="star absolute left-0 w-[80px] h-[80px]  md:w-[150px] md:h-[150px] text-gray-800 dark:text-white"
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          fill="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path d="M13.849 4.22c-.684-1.626-3.014-1.626-3.698 0L8.397 8.387l-4.552.361c-1.775.14-2.495 2.331-1.142 3.477l3.468 2.937-1.06 4.392c-.413 1.713 1.472 3.067 2.992 2.149L12 19.35l3.897 2.354c1.52.918 3.405-.436 2.992-2.15l-1.06-4.39 3.468-2.938c1.353-1.146.633-3.336-1.142-3.477l-4.552-.36-1.754-4.17Z" />
+        </svg>
+
+        <svg
+          className="star absolute left-[240px] bottom-[220px] w-[80px] h-[80px]   md:w-[150px] md:h-[150px] text-gray-800 dark:text-white"
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          fill="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path d="M13.849 4.22c-.684-1.626-3.014-1.626-3.698 0L8.397 8.387l-4.552.361c-1.775.14-2.495 2.331-1.142 3.477l3.468 2.937-1.06 4.392c-.413 1.713 1.472 3.067 2.992 2.149L12 19.35l3.897 2.354c1.52.918 3.405-.436 2.992-2.15l-1.06-4.39 3.468-2.938c1.353-1.146.633-3.336-1.142-3.477l-4.552-.36-1.754-4.17Z" />
+        </svg>
+
+        {/* adjust  */}
+        <svg
+          className="adjust absolute right-[-40px] bottom-[-40px] md:right-[-80px] md:bottom-[-80px] md:w-[400px] md:h-[400px] w-[200px] h-[200px] text-[#916DB3] rotate-[-45deg]"
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeWidth="2"
+            d="M6 4v10m0 0a2 2 0 1 0 0 4m0-4a2 2 0 1 1 0 4m0 0v2m6-16v2m0 0a2 2 0 1 0 0 4m0-4a2 2 0 1 1 0 4m0 0v10m6-16v10m0 0a2 2 0 1 0 0 4m0-4a2 2 0 1 1 0 4m0 0v2"
+          />
+        </svg>
+
+        <p className="absolute bottom-4 text-lg font-serif text-gray-400 ">made with 💖 &copy; 2024</p>
       </section>
     </>
   );

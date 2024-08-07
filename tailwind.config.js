@@ -12,6 +12,12 @@ module.exports = {
         "gradient-conic":
           "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
       },
+      fontFamily: {
+        'Calistoga-Regular' : ['Calistoga-Regular' , 'sans-serif'],
+        'Margarine-Regular': ['Margarine-Regular', 'sans-serif'],
+        'RockSalt-Regular': ['RockSalt-Regular', 'sans-serif'],
+        'Sora-VariableFont_wght': ['Sora-VariableFont-wght', 'sans-serif'],
+      },
     },
   },
   plugins: [],
